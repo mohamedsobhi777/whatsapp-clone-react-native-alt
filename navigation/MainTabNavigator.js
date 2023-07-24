@@ -1,6 +1,7 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import ChatsScreen from "../src/screens/ChatsScreen";
 import { Entypo, Ionicons } from "@expo/vector-icons";
+import SettingsScreen from "../src/screens/SettingsScreen";
 
 const Tab = createBottomTabNavigator();
 
@@ -43,23 +44,29 @@ const MainTabNavigator = () => {
             <Tab.Screen
                 name="Chats"
                 component={ChatsScreen}
-                options={{
-                    tabBarIcon: ({ size, color }) => (
-                        <Ionicons name="ios-chatbubbles-sharp" size={size} />
-                    ),
-                    headerRight: () => (
-                        <Entypo
-                            name="new-message"
-                            size={18}
-                            color="royalblue"
-                            style={{ marginRight: 15 }}
-                        />
-                    ),
+                options={({ navigation }) => {
+                    return {
+                        tabBarIcon: ({ size, color }) => (
+                            <Ionicons
+                                name="ios-chatbubbles-sharp"
+                                size={size}
+                            />
+                        ),
+                        headerRight: () => (
+                            <Entypo
+                                onPress={() => navigation.navigate("Contacts")}
+                                name="new-message"
+                                size={18}
+                                color="royalblue"
+                                style={{ marginRight: 15 }}
+                            />
+                        ),
+                    };
                 }}
             />
             <Tab.Screen
                 name="Settings"
-                component={ChatsScreen}
+                component={SettingsScreen}
                 options={{
                     tabBarIcon: ({ size, color }) => (
                         <Ionicons name="settings-outline" size={size} />

@@ -10,8 +10,13 @@
   },
   "dependencies": {
     "@expo/vector-icons": "^13.0.0",
+    "@react-native-async-storage/async-storage": "^1.19.1",
+    "@react-native-community/netinfo": "^9.4.1",
     "@react-navigation/bottom-tabs": "^6.5.8",
     "@react-navigation/native-stack": "^6.9.13",
+    "amazon-cognito-identity-js": "^6.3.1",
+    "aws-amplify": "^5.3.5",
+    "aws-amplify-react-native": "^7.0.2",
     "dayjs": "^1.11.9",
     "expo": "~48.0.18",
     "expo-status-bar": "~1.4.4",
