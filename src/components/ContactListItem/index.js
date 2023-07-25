@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
         marginRight: 10,
     },
     name: { fontWeight: "bold" },
-    content: {},
+    content: { flex: 1 },
     subTitle: {
         color: "gray",
     },
