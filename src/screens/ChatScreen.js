@@ -1,19 +1,21 @@
+// RN
 import {
-    View,
-    Text,
     ImageBackground,
     StyleSheet,
     FlatList,
     KeyboardAvoidingView,
     Platform,
 } from "react-native";
-import React, { useEffect } from "react";
+import { useEffect } from "react";
+import { useRoute, useNavigation } from "@react-navigation/native";
 
-import bg from "../../assets/images/BG.png";
-import messages from "../../assets/data/messages.json";
+// Components
 import Message from "../components/Message";
 import InputBox from "../components/InputBox";
-import { useRoute, useNavigation } from "@react-navigation/native";
+
+// Assets
+import bg from "../../assets/images/BG.png";
+import messages from "../../assets/data/messages.json";
 
 const ChatScreen = () => {
     const route = useRoute();

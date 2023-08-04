@@ -1,6 +1,7 @@
+// RN
 import { View, Text, StyleSheet } from "react-native";
-import React from "react";
 
+// Utils
 import relativeTime from "dayjs/plugin/relativeTime";
 import dayjs from "dayjs";
 dayjs.extend(relativeTime);

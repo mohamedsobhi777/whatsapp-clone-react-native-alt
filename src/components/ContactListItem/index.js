@@ -1,15 +1,63 @@
-import { View, Text, Image, StyleSheet, Pressable } from "react-native";
-import React from "react";
+// RN
 import { useNavigation } from "@react-navigation/native";
+import { View, Text, Image, StyleSheet, Pressable } from "react-native";
 
-import relativeTime from "dayjs/plugin/relativeTime";
+// Utils
 import dayjs from "dayjs";
 dayjs.extend(relativeTime);
+import relativeTime from "dayjs/plugin/relativeTime";
+import { getCommonGetChatRoomWithUser } from "../../services/chatRoomService";
+
+// AWS
+import { API, graphqlOperation, Auth } from "aws-amplify";
+// Data
+import { createChatRoom, createUserChatRoom } from "../../graphql/mutations";
 
 const ContactListItem = ({ user }) => {
     const navigation = useNavigation();
+
+    const onPress = async () => {
+        const existingChatRoom = await getCommonGetChatRoomWithUser(user.id);
+
+        if (existingChatRoom) {
+            navigation.navigate("Chat", { id: existingChatRoom.id });
+            return;
+        }
+
+        const newChatRoomData = await API.graphql(
+            graphqlOperation(createChatRoom, {
+                input: {},
+            })
+        );
+        // console.log(newChatRoomData);
+        if (!newChatRoomData.data?.createChatRoom) {
+            console.log("Error creating chat room error");
+        }
+        const newChatRoom = newChatRoomData.data?.createChatRoom;
+
+        await API.graphql(
+            graphqlOperation(createUserChatRoom, {
+                input: { chatRoomId: newChatRoom.id, userId: user.id },
+            })
+        );
+
+        // Add the auth user to the chat room
+        const authUser = await Auth.currentAuthenticatedUser();
+
+        await API.graphql(
+            graphqlOperation(createUserChatRoom, {
+                input: {
+                    chatRoomId: newChatRoom.id,
+                    userId: authUser.attributes.sub,
+                },
+            })
+        );
+
+        navigation.navigate("Chat", { id: newChatRoom.id });
+    };
+
     return (
-        <Pressable onPress={() => {}} style={styles.container}>
+        <Pressable onPress={onPress} style={styles.container}>
             <Image
                 source={{
                     uri: user.image,

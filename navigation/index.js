@@ -1,11 +1,11 @@
-import { View, Text } from "react-native";
-import React from "react";
-import ChatScreen from "../src/screens/ChatScreen";
+import MainTabNavigator from "./MainTabNavigator";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import ChatsScreen from "../src/screens/ChatsScreen";
-import MainTabNavigator from "./MainTabNavigator";
+
+// Screens
+import ChatScreen from "../src/screens/ChatScreen";
 import ContactsScreen from "../src/screens/ContactsScreen";
+import ChatsScreen from "../src/screens/ChatsScreen/ChatsScreen";
 
 const Stack = createNativeStackNavigator();
 const Navigator = () => {

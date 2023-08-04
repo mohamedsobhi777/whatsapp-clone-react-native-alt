@@ -1,16 +1,22 @@
-import { View, Text } from "react-native";
-import React from "react";
-import { Button } from "react-native";
+// RN
+import { Button, View, StyleSheet } from "react-native";
+
+// AWS
 import { Auth } from "aws-amplify";
 
 const SettingsScreen = () => {
     return (
-        <View
-            style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-        >
-            <Button onPress={() => Auth.signOut()} />
+        <View style={styles.container}>
+            <Button title="Signout" onPress={() => Auth.signOut()} />
         </View>
     );
 };
 
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+});
 export default SettingsScreen;

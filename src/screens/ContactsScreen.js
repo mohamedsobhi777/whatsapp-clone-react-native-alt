@@ -1,16 +1,21 @@
-import { View, Text, FlatList } from "react-native";
-import React, { useEffect, useState } from "react";
-import ContactListItem from "../components/ContactListItem";
-import chats from "./../../assets/data/chats.json";
+// RN
+import { useEffect, useState } from "react";
+import { FlatList } from "react-native";
 
+// AWS
 import { API, graphqlOperation } from "aws-amplify";
+
+// Data
 import { listUsers } from "../graphql/queries";
+
+// Components
+import ContactListItem from "../components/ContactListItem";
 
 const ContactsScreen = () => {
     const [users, setUsers] = useState([]);
     useEffect(() => {
         API.graphql(graphqlOperation(listUsers)).then((result) => {
-            console.log(result);
+            // console.log(result);
             setUsers(result?.data?.listUsers?.items);
         });
     }, []);
