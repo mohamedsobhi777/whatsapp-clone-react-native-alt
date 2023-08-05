@@ -46,8 +46,6 @@ function App() {
 
     return (
         <View style={styles.container}>
-            {/* <ChatsScreens /> */}
-            {/* <ChatScreen /> */}
             <Navigator />
         </View>
     );
