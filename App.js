@@ -39,6 +39,7 @@ function App() {
 
             // console.log(newUserResponse);
             // Auth.signOut() ;
+
         };
 
         syncUser();
