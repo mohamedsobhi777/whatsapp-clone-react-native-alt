@@ -1,12 +1,47 @@
-import { View, Text, StyleSheet, TextInput, SafeAreaView } from "react-native";
-import React, { useState } from "react";
+// RN
+import { useState } from "react";
+import { StyleSheet, TextInput, SafeAreaView } from "react-native";
+
+// Assets
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 
-const InputBox = () => {
-    const [newMessage, setNewMessage] = useState("");
-    const onSend = () => {
-        console.warn("Sending a new message: " + newMessage);
+// AWS
+import { API, Auth, graphqlOperation } from "aws-amplify";
+import { createMessage, updateChatRoom } from "../../graphql/mutations";
+
+const InputBox = ({ chatroom }) => {
+    const [text, setText] = useState("");
+
+    const onSend = async () => {
+        const authUser = await Auth.currentAuthenticatedUser();
+        // console.warn("Sending a new message: " + newMessage);
+        const newMessage = {
+            chatroomID: chatroom.id,
+            text,
+            userID: authUser.attributes.sub,
+        };
+
+        const newMessageData = await API.graphql(
+            graphqlOperation(createMessage, { input: newMessage })
+        );
+        setText("");
+        console.log("Hihi");
+        console.log({
+            id: chatroom.id,
+            chatRoomLastMessageId: newMessageData.data.createMessage.id,
+            _version: chatroom._version,
+        });
+        await API.graphql(
+            graphqlOperation(updateChatRoom, {
+                input: {
+                    id: chatroom.id,
+                    chatRoomLastMessageId: newMessageData.data.createMessage.id,
+                    _version: chatroom._version,
+                },
+            })
+        );
     };
+
     return (
         <SafeAreaView edges={["bottom"]} style={styles.container}>
             <AntDesign name="plus" size={20} color="royalblue" />
@@ -14,8 +49,8 @@ const InputBox = () => {
             <TextInput
                 style={styles.input}
                 placeholder="type your message..."
-                value={newMessage}
-                onChangeText={setNewMessage}
+                value={text}
+                onChangeText={(newText) => setText(newText)}
             />
 
             <MaterialIcons
