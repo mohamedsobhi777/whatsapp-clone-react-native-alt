@@ -6,55 +6,15 @@ import { View, Text, Image, StyleSheet, Pressable } from "react-native";
 import dayjs from "dayjs";
 dayjs.extend(relativeTime);
 import relativeTime from "dayjs/plugin/relativeTime";
-import { getCommonGetChatRoomWithUser } from "../../services/chatRoomService";
+import { AntDesign, FontAwesome } from "@expo/vector-icons";
 
-// AWS
-import { API, graphqlOperation, Auth } from "aws-amplify";
-// Data
-import { createChatRoom, createUserChatRoom } from "../../graphql/mutations";
-
-const ContactListItem = ({ user }) => {
+const ContactListItem = ({
+    user,
+    onPress = () => {},
+    selectable = false,
+    isSelected = false,
+}) => {
     const navigation = useNavigation();
-
-    const onPress = async () => {
-        const existingChatRoom = await getCommonGetChatRoomWithUser(user.id);
-
-        if (existingChatRoom) {
-            navigation.navigate("Chat", { id: existingChatRoom.id });
-            return;
-        }
-
-        const newChatRoomData = await API.graphql(
-            graphqlOperation(createChatRoom, {
-                input: {},
-            })
-        );
-        // console.log(newChatRoomData);
-        if (!newChatRoomData.data?.createChatRoom) {
-            console.log("Error creating chat room error");
-        }
-        const newChatRoom = newChatRoomData.data?.createChatRoom;
-
-        await API.graphql(
-            graphqlOperation(createUserChatRoom, {
-                input: { chatRoomId: newChatRoom.id, userId: user.id },
-            })
-        );
-
-        // Add the auth user to the chat room
-        const authUser = await Auth.currentAuthenticatedUser();
-
-        await API.graphql(
-            graphqlOperation(createUserChatRoom, {
-                input: {
-                    chatRoomId: newChatRoom.id,
-                    userId: authUser.attributes.sub,
-                },
-            })
-        );
-
-        navigation.navigate("Chat", { id: newChatRoom.id });
-    };
 
     return (
         <Pressable onPress={onPress} style={styles.container}>
@@ -73,6 +33,16 @@ const ContactListItem = ({ user }) => {
                     {user.status}
                 </Text>
             </View>
+            {selectable &&
+                (isSelected ? (
+                    <AntDesign name="checkcircle" size={24} color="royalblue" />
+                ) : (
+                    <FontAwesome
+                        name="circle-thin"
+                        size={24}
+                        color="lightgray"
+                    />
+                ))}
         </Pressable>
     );
 };
@@ -93,7 +63,7 @@ const styles = StyleSheet.create({
         marginRight: 10,
     },
     name: { fontWeight: "bold" },
-    content: { flex: 1 },
+    content: { flex: 1, marginRight: 10 },
     subTitle: {
         color: "gray",
     },

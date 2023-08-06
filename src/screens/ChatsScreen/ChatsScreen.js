@@ -18,8 +18,11 @@ const ChatsScreen = () => {
     const fecthChatRooms = async () => {
         setLoading(true);
         const authUser = await Auth.currentAuthenticatedUser();
+        console.log("da fkn user", authUser.attributes.sub);
         const response = await API.graphql(
-            graphqlOperation(listChatRooms, { id: authUser.attributes.sub })
+            graphqlOperation(listChatRooms, {
+                id: authUser.attributes.sub,
+            })
         );
 
         const rooms = response?.data?.getUser?.ChatRooms?.items || [];
@@ -31,6 +34,9 @@ const ChatsScreen = () => {
 
         setChatRooms(sortedRooms);
         setLoading(false);
+        console.log("da sorted rooms");
+        console.log(sortedRooms.length);
+        console.log(sortedRooms);
     };
     useEffect(() => {
         fecthChatRooms();

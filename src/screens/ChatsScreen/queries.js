@@ -2,24 +2,27 @@ export const listChatRooms = /* GraphQL */ `
     query GetUser($id: ID!) {
         getUser(id: $id) {
             id
-            ChatRooms {
+            ChatRooms(filter: { _deleted: { ne: true } }) {
                 items {
+                    _deleted
                     chatRoom {
                         id
                         updatedAt
+                        name
+                        image
                         users {
                             items {
                                 user {
-                                    name
                                     id
                                     image
+                                    name
                                 }
                             }
                         }
                         LastMessage {
                             id
-                            text
                             createdAt
+                            text
                         }
                     }
                 }
