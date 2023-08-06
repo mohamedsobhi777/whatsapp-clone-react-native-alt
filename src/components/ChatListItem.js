@@ -1,32 +1,59 @@
 // RN
 import { useNavigation } from "@react-navigation/native";
 import { View, Text, Image, StyleSheet, Pressable } from "react-native";
+import { useEffect, useState } from "react";
 
 // Utils
 import relativeTime from "dayjs/plugin/relativeTime";
 import dayjs from "dayjs";
-import { useEffect, useState } from "react";
-import { Auth } from "aws-amplify";
+
+// AWS
+import { API, Auth, graphqlOperation } from "aws-amplify";
+import { onUpdateChatRoom } from "../graphql/subscriptions";
 dayjs.extend(relativeTime);
 
 const ChatListItem = ({ chat }) => {
     const navigation = useNavigation();
     const [user, setUser] = useState(null);
+    const [chatRoom, setChatRoom] = useState(chat);
+
     useEffect(() => {
         const fetchUser = async () => {
             const authUser = await Auth.currentAuthenticatedUser();
-            const userItem = chat.users.items.find(
+            const userItem = chatRoom.users.items.find(
                 (item) => item.user.id !== authUser.attributes.sub
             );
             setUser(userItem?.user);
         };
         fetchUser();
     }, []);
+
+    // Subscribe to updates
+    useEffect(() => {
+        const subscription = API.graphql(
+            graphqlOperation(onUpdateChatRoom, {
+                filter: {
+                    id: {
+                        eq: chat.id,
+                    },
+                },
+            })
+        ).subscribe({
+            next: ({ value }) => {
+                setChatRoom((cr) => ({
+                    ...(cr || {}),
+                    ...value.data.onUpdateChatRoom,
+                }));
+            },
+            error: () => console.log(error),
+        });
+        return () => subscription.unsubscribe();
+    }, [chat.id]);
     return (
         <Pressable
             onPress={() =>
                 navigation.navigate("Chat", {
-                    id: chat.id,
+                    id: chatRoom.id,
                     name: user?.name,
                 })
             }
@@ -44,14 +71,16 @@ const ChatListItem = ({ chat }) => {
                     <Text numberOfLines={1} style={styles.name}>
                         {user?.name}
                     </Text>
-                    {chat.LastMessage && (
+                    {chatRoom.LastMessage && (
                         <Text style={styles.subTitle}>
-                            {dayjs(chat.LastMessage?.createdAt).fromNow(true)}
+                            {dayjs(chatRoom.LastMessage?.createdAt).fromNow(
+                                true
+                            )}
                         </Text>
                     )}
                 </View>
                 <Text numberOfLines={2} style={styles.subTitle}>
-                    {chat.LastMessage?.text}
+                    {chatRoom.LastMessage?.text}
                 </Text>
             </View>
         </Pressable>

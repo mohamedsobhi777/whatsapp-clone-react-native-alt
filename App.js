@@ -23,12 +23,12 @@ function App() {
             const userData = await API.graphql(
                 graphqlOperation(getUser, { id: authUser.attributes.sub })
             );
-
+            console.log(authUser) ; 
             if (userData.data.getUser) {
                 console.log("User already exists in the database");
                 return;
             }
-
+            
             const newUser = {
                 id: authUser.attributes.sub,
                 name: authUser.attributes.phone_number,

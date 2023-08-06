@@ -25,7 +25,6 @@ const InputBox = ({ chatroom }) => {
             graphqlOperation(createMessage, { input: newMessage })
         );
         setText("");
-        console.log("Hihi");
         console.log({
             id: chatroom.id,
             chatRoomLastMessageId: newMessageData.data.createMessage.id,
