@@ -1,7 +1,7 @@
 // RN
 import { useEffect, useState } from "react";
 import { Button, FlatList, StyleSheet, TextInput, View } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 
 // AWS
 import { API, Auth, graphqlOperation } from "aws-amplify";
@@ -14,12 +14,14 @@ import ContactListItem from "../components/ContactListItem";
 import { MaterialIcons } from "@expo/vector-icons";
 import { createChatRoom, createUserChatRoom } from "../graphql/mutations";
 
-const NewGroupScreen = () => {
+const AddContactsToGroupScreen = () => {
     const [users, setUsers] = useState([]);
     const [selectedUserIds, setSelectedUserIds] = useState([]);
-    const [name, setName] = useState("");
 
     const navigation = useNavigation();
+    const route = useRoute();
+    const chatRoom = route.params.chatRoom;
+
     useEffect(() => {
         API.graphql(
             graphqlOperation(listUsers, {
@@ -29,7 +31,16 @@ const NewGroupScreen = () => {
             })
         ).then((result) => {
             // console.log(result);
-            setUsers(result?.data?.listUsers?.items);
+            setUsers(
+                result.data?.listUsers?.items.filter(
+                    (item) =>
+                        !chatRoom.users.items.some(
+                            (chatRoomUser) =>
+                                !chatRoomUser._deleted &&
+                                item.id === chatRoomUser.userId
+                        )
+                )
+            );
         });
     }, []);
 
@@ -37,52 +48,30 @@ const NewGroupScreen = () => {
         navigation.setOptions({
             headerRight: () => (
                 <Button
-                    title="Create"
-                    disabled={!name || selectedUserIds.length === 0}
-                    onPress={onCreateGroupPress}
+                    title="Add to group"
+                    disabled={selectedUserIds.length === 0}
+                    onPress={onAddToGroupPress}
                 />
             ),
         });
-    }, [name, selectedUserIds]);
+    }, [selectedUserIds]);
 
-    const onCreateGroupPress = async () => {
-        const newChatRoomData = await API.graphql(
-            graphqlOperation(createChatRoom, {
-                input: { name },
-            })
-        );
-
-        if (!newChatRoomData.data?.createChatRoom) {
-            console.log("Error creating chat room error");
-        }
-        const newChatRoom = newChatRoomData.data?.createChatRoom;
-
+    const onAddToGroupPress = async () => {
         // Add the selected users to the ChatRoom
         await Promise.all(
             selectedUserIds.map((userId) =>
                 API.graphql(
                     graphqlOperation(createUserChatRoom, {
-                        input: { chatRoomId: newChatRoom.id, userId },
+                        input: { chatRoomId: chatRoom.id, userId },
                     })
                 )
             )
         );
 
-        // Add the auth user to the chat room
-        const authUser = await Auth.currentAuthenticatedUser();
-        await API.graphql(
-            graphqlOperation(createUserChatRoom, {
-                input: {
-                    chatRoomId: newChatRoom.id,
-                    userId: authUser.attributes.sub,
-                },
-            })
-        );
-
         setSelectedUserIds([]);
-        setName("");
+
         // navigate to the newly created ChatRoom
-        navigation.navigate("Chat", { id: newChatRoom.id });
+        navigation.goBack();
     };
 
     const onContactPress = (id) => {
@@ -97,12 +86,6 @@ const NewGroupScreen = () => {
 
     return (
         <View style={styles.container}>
-            <TextInput
-                placeholder="Group name"
-                value={name}
-                onChangeText={setName}
-                style={styles.input}
-            />
             <FlatList
                 data={users}
                 renderItem={({ item }) => (
@@ -129,4 +112,4 @@ const styles = StyleSheet.create({
         margin: 10,
     },
 });
-export default NewGroupScreen;
+export default AddContactsToGroupScreen;
