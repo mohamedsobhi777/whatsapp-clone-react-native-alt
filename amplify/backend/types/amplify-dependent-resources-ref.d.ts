@@ -16,5 +16,11 @@ export type AmplifyDependentResourcesAttributes = {
       "UserPoolId": "string",
       "UserPoolName": "string"
     }
+  },
+  "storage": {
+    "s3whatsappclonestoragea0cad539": {
+      "BucketName": "string",
+      "Region": "string"
+    }
   }
 }
