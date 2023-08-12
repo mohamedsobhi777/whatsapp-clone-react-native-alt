@@ -1,5 +1,5 @@
 // RN
-import { View, Text, StyleSheet, Image } from "react-native";
+import { View, Text, StyleSheet, Image, Pressable } from "react-native";
 import { useEffect, useState } from "react";
 
 // Utils
@@ -8,11 +8,16 @@ import dayjs from "dayjs";
 dayjs.extend(relativeTime);
 
 // AWS
-import { Auth } from "aws-amplify";
+import { Auth, Storage } from "aws-amplify";
 import { S3Image } from "aws-amplify-react-native";
+
+import ImageView from "react-native-image-viewing";
 
 const Message = ({ message }) => {
     const [isMe, setIsMe] = useState(false);
+    const [imageSources, setImageSources] = useState([]);
+    const [imageViewerVisible, setImageViewerVisible] = useState(false);
+
     useEffect(() => {
         const isMyMessage = async () => {
             const authUser = await Auth.currentAuthenticatedUser();
@@ -20,6 +25,16 @@ const Message = ({ message }) => {
         };
         isMyMessage();
     }, []);
+
+    useEffect(() => {
+        const downloadImages = async () => {
+            if (message.images?.length > 0) {
+                const url = await Storage.get(message.images[0]);
+                setImageSources([{ uri: url }]);
+            }
+        };
+        downloadImages();
+    }, [message.images]);
 
     return (
         <View
@@ -32,7 +47,17 @@ const Message = ({ message }) => {
             ]}
         >
             {message.images?.length > 0 && (
-                <S3Image imgKey={message.images[0]} style={styles.image} />
+                <>
+                    <Pressable onPress={() => setImageViewerVisible(true)}>
+                        <Image source={imageSources[0]} style={styles.image} />
+                    </Pressable>
+                    <ImageView
+                        images={imageSources}
+                        imageIndex={0}
+                        visible={imageViewerVisible}
+                        onRequestClose={() => setImageViewerVisible(false)}
+                    />
+                </>
             )}
             {/* <Text>{JSON.stringify(message?.images)}</Text> */}
             <Text>{message.text}</Text>
