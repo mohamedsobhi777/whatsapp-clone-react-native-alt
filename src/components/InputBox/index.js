@@ -7,6 +7,7 @@ import {
     Text,
     View,
     Image,
+    FlatList,
 } from "react-native";
 
 // Assets
@@ -30,8 +31,8 @@ const uploadFile = async (fileUri) => {
         await Storage.put(key, blob, {
             contentType: "image/png",
         });
-        // console.log("za key") ; 
-        // console.log(key) ; 
+        // console.log("za key") ;
+        // console.log(key) ;
         return key;
     } catch (err) {
         console.log("Error uploading file:", err);
@@ -40,7 +41,7 @@ const uploadFile = async (fileUri) => {
 
 const InputBox = ({ chatroom }) => {
     const [text, setText] = useState("");
-    const [image, setImage] = useState(null);
+    const [images, setImages] = useState(null);
 
     const onSend = async () => {
         const authUser = await Auth.currentAuthenticatedUser();
@@ -51,9 +52,10 @@ const InputBox = ({ chatroom }) => {
             userID: authUser.attributes.sub,
         };
 
-        if (image) {
-            newMessage.images = [await uploadFile(image)];
-            setImage(null);
+        if (images.length > 0) {
+            newMessage.images = await Promise.all(images.map(uploadFile));
+            setImages([]);
+            // [await uploadFile(images)];
         }
 
         const newMessageData = await API.graphql(
@@ -80,31 +82,46 @@ const InputBox = ({ chatroom }) => {
         let result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
             quality: 1,
+            allowsMultipleSelection: true,
         });
-        
-
-        
+        console.log("die results");
+        console.log(result);
+        console.log("ende results");
         if (!result.canceled) {
             // console.log(result.assets[0].uri);
-            setImage(result.assets[0].uri);
+            setImages(result.assets.map((resultItem) => resultItem.uri));
         }
     };
 
     return (
         <>
-            {image && (
+            {images?.length > 0 && (
                 <View style={styles.attachmentsContainer}>
-                    <Image
-                        source={{ uri: image }}
-                        style={styles.selectedImage}
-                        resizeMode="contain"
-                    />
-                    <MaterialIcons
-                        name="highlight-remove"
-                        onPress={() => setImage(null)}
-                        size={20}
-                        color={"gray"}
-                        style={styles.removeSelectedImage}
+                    <FlatList
+                        data={images}
+                        horizontal
+                        renderItem={({ item }) => (
+                            <>
+                                <Image
+                                    source={{ uri: item }}
+                                    style={styles.selectedImage}
+                                    resizeMode="contain"
+                                />
+                                <MaterialIcons
+                                    name="highlight-remove"
+                                    onPress={() => {
+                                        setImages((prev) =>
+                                            prev.filter(
+                                                (listItem) => listItem !== item
+                                            )
+                                        );
+                                    }}
+                                    size={20}
+                                    color={"gray"}
+                                    style={styles.removeSelectedImage}
+                                />
+                            </>
+                        )}
                     />
                 </View>
             )}

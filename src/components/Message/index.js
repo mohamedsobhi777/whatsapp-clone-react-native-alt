@@ -1,5 +1,12 @@
 // RN
-import { View, Text, StyleSheet, Image, Pressable } from "react-native";
+import {
+    View,
+    Text,
+    StyleSheet,
+    Image,
+    Pressable,
+    useWindowDimensions,
+} from "react-native";
 import { useEffect, useState } from "react";
 
 // Utils
@@ -17,6 +24,8 @@ const Message = ({ message }) => {
     const [isMe, setIsMe] = useState(false);
     const [imageSources, setImageSources] = useState([]);
     const [imageViewerVisible, setImageViewerVisible] = useState(false);
+    const [selectedIndex, setSelectedIndex] = useState(0);
+    const { width } = useWindowDimensions();
 
     useEffect(() => {
         const isMyMessage = async () => {
@@ -29,12 +38,18 @@ const Message = ({ message }) => {
     useEffect(() => {
         const downloadImages = async () => {
             if (message.images?.length > 0) {
-                const url = await Storage.get(message.images[0]);
-                setImageSources([{ uri: url }]);
+                const uris = await Promise.all(message.images.map(Storage.get));
+                setImageSources(
+                    uris.map((uri) => ({
+                        uri,
+                    }))
+                );
             }
         };
         downloadImages();
     }, [message.images]);
+
+    const imageContainerWidth = width * 0.8 - 30;
 
     return (
         <View
@@ -46,18 +61,29 @@ const Message = ({ message }) => {
                 },
             ]}
         >
-            {message.images?.length > 0 && (
-                <>
-                    <Pressable onPress={() => setImageViewerVisible(true)}>
-                        <Image source={imageSources[0]} style={styles.image} />
-                    </Pressable>
+            {imageSources.length > 0 && (
+                <View style={[{ width: imageContainerWidth }, styles.images]}>
+                    {imageSources.map((imageSource, i) => (
+                        <Pressable
+                            style={[
+                                styles.imageContainer,
+                                imageSources.length === 1 && { flex: 1 },
+                            ]}
+                            onPress={() => {
+                                setSelectedIndex(i);
+                                setImageViewerVisible(true);
+                            }}
+                        >
+                            <Image source={imageSource} style={styles.image} />
+                        </Pressable>
+                    ))}
                     <ImageView
                         images={imageSources}
-                        imageIndex={0}
+                        imageIndex={selectedIndex}
                         visible={imageViewerVisible}
                         onRequestClose={() => setImageViewerVisible(false)}
                     />
-                </>
+                </View>
             )}
             {/* <Text>{JSON.stringify(message?.images)}</Text> */}
             <Text>{message.text}</Text>
@@ -89,8 +115,17 @@ const styles = StyleSheet.create({
         color: "gray",
         alignSelf: "flex-end",
     },
+    images: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+    },
+    imageContainer: {
+        width: "45%",
+        aspectRatio: 1,
+        padding: 3,
+    },
     image: {
-        width: 200,
+        flex: 1,
         height: 100,
         borderColor: "white",
         borderWidth: 2,
