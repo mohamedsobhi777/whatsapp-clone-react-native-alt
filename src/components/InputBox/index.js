@@ -8,6 +8,7 @@ import {
     View,
     Image,
     FlatList,
+    ActivityIndicator,
 } from "react-native";
 
 // Assets
@@ -15,7 +16,11 @@ import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 
 // AWS
 import { API, Auth, Storage, graphqlOperation } from "aws-amplify";
-import { createMessage, updateChatRoom } from "../../graphql/mutations";
+import {
+    createAttachment,
+    createMessage,
+    updateChatRoom,
+} from "../../graphql/mutations";
 
 // Uitls
 import * as ImagePicker from "expo-image-picker";
@@ -23,16 +28,18 @@ import * as ImagePicker from "expo-image-picker";
 import "react-native-get-random-values";
 import { v4 as uuidv4 } from "uuid";
 
-const uploadFile = async (fileUri) => {
+const uploadFile = async ({ uri, type }) => {
+    // const exts = {
+    //     image: ""
+    // }
     try {
-        const response = await fetch(fileUri);
+        const response = await fetch(uri);
+
         const blob = await response.blob();
         const key = `${uuidv4()}.png`;
         await Storage.put(key, blob, {
             contentType: "image/png",
         });
-        // console.log("za key") ;
-        // console.log(key) ;
         return key;
     } catch (err) {
         console.log("Error uploading file:", err);
@@ -40,10 +47,12 @@ const uploadFile = async (fileUri) => {
 };
 
 const InputBox = ({ chatroom }) => {
+    const [uploading, setUploading] = useState(false);
     const [text, setText] = useState("");
-    const [images, setImages] = useState(null);
+    const [files, setFiles] = useState(null);
 
     const onSend = async () => {
+        setUploading(true);
         const authUser = await Auth.currentAuthenticatedUser();
         // console.warn("Sending a new message: " + newMessage);
         const newMessage = {
@@ -52,21 +61,20 @@ const InputBox = ({ chatroom }) => {
             userID: authUser.attributes.sub,
         };
 
-        if (images.length > 0) {
-            newMessage.images = await Promise.all(images.map(uploadFile));
-            setImages([]);
-            // [await uploadFile(images)];
-        }
-
         const newMessageData = await API.graphql(
             graphqlOperation(createMessage, { input: newMessage })
         );
         setText("");
-        console.log({
-            id: chatroom.id,
-            chatRoomLastMessageId: newMessageData.data.createMessage.id,
-            _version: chatroom._version,
-        });
+
+        await Promise.all(
+            files.map((file) =>
+                addAttachment(file, newMessageData.data.createMessage.id)
+            )
+        );
+
+        setFiles([]);
+        setUploading(false);
+
         await API.graphql(
             graphqlOperation(updateChatRoom, {
                 input: {
@@ -78,48 +86,93 @@ const InputBox = ({ chatroom }) => {
         );
     };
 
+    const addAttachment = async (file, messageID) => {
+        const types = {
+            image: "IMAGE",
+            video: "VIDEO",
+        };
+
+        const newAttachment = {
+            storageKey: await uploadFile({ uri: file.uri, type: "" }),
+            type: "IMAGE",
+            width: file.width,
+            height: file.height,
+            duration: file.duration,
+            messageID,
+            chatroomID: chatroom.id,
+        };
+
+        return API.graphql(
+            graphqlOperation(createAttachment, { input: newAttachment })
+        );
+    };
+
     const pickImage = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
             quality: 1,
             allowsMultipleSelection: true,
         });
-        console.log("die results");
-        console.log(result);
-        console.log("ende results");
+
         if (!result.canceled) {
             // console.log(result.assets[0].uri);
-            setImages(result.assets.map((resultItem) => resultItem.uri));
+            setFiles(
+                result.assets.map((item) => ({
+                    uri: item.uri,
+                }))
+            );
         }
+
     };
 
     return (
         <>
-            {images?.length > 0 && (
+            {files?.length > 0 && (
                 <View style={styles.attachmentsContainer}>
                     <FlatList
-                        data={images}
+                        data={files}
                         horizontal
                         renderItem={({ item }) => (
                             <>
-                                <Image
-                                    source={{ uri: item }}
-                                    style={styles.selectedImage}
-                                    resizeMode="contain"
-                                />
-                                <MaterialIcons
-                                    name="highlight-remove"
-                                    onPress={() => {
-                                        setImages((prev) =>
-                                            prev.filter(
-                                                (listItem) => listItem !== item
-                                            )
-                                        );
-                                    }}
-                                    size={20}
-                                    color={"gray"}
-                                    style={styles.removeSelectedImage}
-                                />
+                                <>
+                                    <Image
+                                        source={{ uri: item.uri }}
+                                        style={[
+                                            styles.selectedImage,
+                                            {
+                                                opacity: 0.6,
+                                            },
+                                        ]}
+                                        resizeMode="contain"
+                                    />
+                                    {uploading && (
+                                        <ActivityIndicator
+                                            style={{
+                                                position: "absolute",
+                                                top: 0,
+                                                left: "30%",
+                                            }}
+                                            color={"white"}
+                                            size={42}
+                                        />
+                                    )}
+                                </>
+
+                                {!uploading && (
+                                    <MaterialIcons
+                                        name="highlight-remove"
+                                        onPress={() => {
+                                            setFiles((existingFile) =>
+                                                existingFile.filter(
+                                                    (file) => file !== item
+                                                )
+                                            );
+                                        }}
+                                        size={20}
+                                        color={"gray"}
+                                        style={styles.removeSelectedImage}
+                                    />
+                                )}
                             </>
                         )}
                     />

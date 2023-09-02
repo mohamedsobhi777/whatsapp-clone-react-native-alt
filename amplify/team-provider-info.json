@@ -17,6 +17,9 @@
       },
       "api": {
         "whatsappclone": {}
+      },
+      "storage": {
+        "s3whatsappclonestoragea0cad539": {}
       }
     }
   }

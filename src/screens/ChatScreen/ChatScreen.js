@@ -13,16 +13,17 @@ import { useEffect, useState } from "react";
 import { useRoute, useNavigation } from "@react-navigation/native";
 
 // Components
-import Message from "../components/Message";
-import InputBox from "../components/InputBox";
+import Message from "../../components/Message";
+import InputBox from "../../components/InputBox";
 
 // Assets
-import bg from "../../assets/images/BG.png";
+import bg from "../../../assets/images/BG.png";
 
 // AWS
 import { API, graphqlOperation } from "aws-amplify";
-import { getChatRoom, listMessagesByChatRoom } from "../graphql/queries";
-import { onCreateMessage, onUpdateChatRoom } from "../graphql/subscriptions";
+import { getChatRoom } from "../../graphql/queries";
+import { listMessagesByChatRoom } from "./ChatScreenQueries";
+import { onCreateMessage, onUpdateChatRoom } from "../../graphql/subscriptions";
 import { Feather } from "@expo/vector-icons";
 
 const ChatScreen = () => {
@@ -64,7 +65,6 @@ const ChatScreen = () => {
 
     // Fetch Messages
     useEffect(() => {
-        console.log("fetching da messages");
         API.graphql(
             graphqlOperation(listMessagesByChatRoom, {
                 chatroomID,
@@ -121,6 +121,8 @@ const ChatScreen = () => {
             </View>
         );
     }
+
+    console.log(JSON.stringify(messages, null, 2));
 
     return (
         <KeyboardAvoidingView
