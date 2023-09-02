@@ -28,36 +28,12 @@ import * as ImagePicker from "expo-image-picker";
 import "react-native-get-random-values";
 import { v4 as uuidv4 } from "uuid";
 
-const uploadFile = async ({ uri, type }) => {
-    const exts = {
-        image: "png",
-        video: "mp4",
-    };
-    const contentTypes = {
-        image: "image/png",
-        video: "video/mp4",
-    };
-    try {
-        const response = await fetch(uri);
-
-        const blob = await response.blob();
-        const key = `${uuidv4()}.${exts[type]}`;
-        await Storage.put(key, blob, {
-            contentType: contentTypes[type],
-        });
-        return key;
-    } catch (err) {
-        console.log("Error uploading file:", err);
-    }
-};
-
 const InputBox = ({ chatroom }) => {
-    const [uploading, setUploading] = useState(false);
     const [text, setText] = useState("");
     const [files, setFiles] = useState(null);
+    const [progresses, setProgresses] = useState({});
 
     const onSend = async () => {
-        setUploading(true);
         const authUser = await Auth.currentAuthenticatedUser();
         // console.warn("Sending a new message: " + newMessage);
         const newMessage = {
@@ -78,7 +54,6 @@ const InputBox = ({ chatroom }) => {
         );
 
         setFiles([]);
-        setUploading(false);
 
         await API.graphql(
             graphqlOperation(updateChatRoom, {
@@ -89,6 +64,35 @@ const InputBox = ({ chatroom }) => {
                 },
             })
         );
+    };
+
+    const uploadFile = async ({ uri, type }) => {
+        const exts = {
+            image: "png",
+            video: "mp4",
+        };
+        const contentTypes = {
+            image: "image/png",
+            video: "video/mp4",
+        };
+        try {
+            const response = await fetch(uri);
+
+            const blob = await response.blob();
+            const key = `${uuidv4()}.${exts[type]}`;
+            await Storage.put(key, blob, {
+                contentType: contentTypes[type],
+                progressCallback: (progress) => {
+                    setProgresses((p) => ({
+                        ...p,
+                        [uri]: progress.loaded / progress.total,
+                    }));
+                },
+            });
+            return key;
+        } catch (err) {
+            console.log("Error uploading file:", err);
+        }
     };
 
     const addAttachment = async (file, messageID) => {
@@ -139,45 +143,50 @@ const InputBox = ({ chatroom }) => {
                         horizontal
                         renderItem={({ item }) => (
                             <>
-                                <>
-                                    <Image
-                                        source={{ uri: item.uri }}
-                                        style={[
-                                            styles.selectedImage,
-                                            {
-                                                opacity: 0.6,
-                                            },
-                                        ]}
-                                        resizeMode="contain"
-                                    />
-                                    {uploading && (
-                                        <ActivityIndicator
-                                            style={{
-                                                position: "absolute",
-                                                top: 0,
-                                                left: "30%",
-                                            }}
-                                            color={"white"}
-                                            size={42}
-                                        />
-                                    )}
-                                </>
+                                <Image
+                                    source={{ uri: item.uri }}
+                                    style={styles.selectedImage}
+                                    resizeMode="contain"
+                                />
 
-                                {!uploading && (
-                                    <MaterialIcons
-                                        name="highlight-remove"
-                                        onPress={() => {
-                                            setFiles((existingFile) =>
-                                                existingFile.filter(
-                                                    (file) => file !== item
-                                                )
-                                            );
+                                {progresses[item.uri] && (
+                                    <View
+                                        style={{
+                                            position: "absolute",
+                                            top: "50%",
+                                            left: "50%",
+                                            backgroundColor: "#8c8c8c",
+                                            padding: 5,
+                                            borderRadius: 50,
                                         }}
-                                        size={20}
-                                        color={"gray"}
-                                        style={styles.removeSelectedImage}
-                                    />
+                                    >
+                                        <Text
+                                            style={{
+                                                color: "white",
+                                                fontWeight: "bold",
+                                            }}
+                                        >
+                                            {(
+                                                progresses[item.uri] * 100
+                                            ).toFixed(0)}
+                                            %
+                                        </Text>
+                                    </View>
                                 )}
+
+                                <MaterialIcons
+                                    name="highlight-remove"
+                                    onPress={() => {
+                                        setFiles((existingFile) =>
+                                            existingFile.filter(
+                                                (file) => file !== item
+                                            )
+                                        );
+                                    }}
+                                    size={20}
+                                    color={"gray"}
+                                    style={styles.removeSelectedImage}
+                                />
                             </>
                         )}
                     />
