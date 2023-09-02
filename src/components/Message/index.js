@@ -16,15 +16,14 @@ dayjs.extend(relativeTime);
 
 // AWS
 import { Auth, Storage } from "aws-amplify";
-import { S3Image } from "aws-amplify-react-native";
 
-import ImageView from "react-native-image-viewing";
+import ImageAttachments from "./ImageAttachments";
+import VideoAttachments from "./VideoAttachments";
 
 const Message = ({ message }) => {
     const [isMe, setIsMe] = useState(false);
-    const [imageViewerVisible, setImageViewerVisible] = useState(false);
+
     const [downloadedAttachments, stDownloadedAttachments] = useState([]);
-    const [selectedIndex, setSelectedIndex] = useState(0);
     const { width } = useWindowDimensions();
 
     useEffect(() => {
@@ -54,6 +53,13 @@ const Message = ({ message }) => {
 
     const imageContainerWidth = width * 0.8 - 30;
 
+    const imageAttachments = downloadedAttachments.filter(
+        (attachment) => attachment.type === "IMAGE"
+    );
+
+    const videoAttachments = downloadedAttachments.filter(
+        (attachment) => attachment.type === "VIDEO"
+    );
 
     return (
         <View
@@ -67,32 +73,10 @@ const Message = ({ message }) => {
         >
             {downloadedAttachments.length > 0 && (
                 <View style={[{ width: imageContainerWidth }, styles.images]}>
-                    {downloadedAttachments.map((imageSource, i) => (
-                        <Pressable
-                            style={[
-                                styles.imageContainer,
-                                downloadedAttachments.length === 1 && {
-                                    flex: 1,
-                                },
-                            ]}
-                            onPress={() => {
-                                setSelectedIndex(i);
-                                setImageViewerVisible(true);
-                            }}
-                        >
-                            <Image
-                                source={{ uri: imageSource.uri }}
-                                style={styles.image}
-                            />
-                        </Pressable>
-                    ))}
-                    <ImageView
-                        images={downloadedAttachments.map(({ uri }) => ({
-                            uri,
-                        }))}
-                        imageIndex={selectedIndex}
-                        visible={imageViewerVisible}
-                        onRequestClose={() => setImageViewerVisible(false)}
+                    <ImageAttachments attachments={imageAttachments} />
+                    <VideoAttachments
+                        attachments={videoAttachments}
+                        width={imageContainerWidth}
                     />
                 </View>
             )}

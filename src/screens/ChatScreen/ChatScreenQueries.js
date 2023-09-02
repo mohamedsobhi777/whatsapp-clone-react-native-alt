@@ -22,7 +22,7 @@ export const listMessagesByChatRoom = /* GraphQL */ `
                 chatroomID
                 userID
                 images
-                Attachments {
+                Attachments(filter: { _deleted: { ne: true } }) {
                     nextToken
                     startedAt
                     __typename

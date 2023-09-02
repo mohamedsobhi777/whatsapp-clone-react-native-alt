@@ -29,16 +29,21 @@ import "react-native-get-random-values";
 import { v4 as uuidv4 } from "uuid";
 
 const uploadFile = async ({ uri, type }) => {
-    // const exts = {
-    //     image: ""
-    // }
+    const exts = {
+        image: "png",
+        video: "mp4",
+    };
+    const contentTypes = {
+        image: "image/png",
+        video: "video/mp4",
+    };
     try {
         const response = await fetch(uri);
 
         const blob = await response.blob();
-        const key = `${uuidv4()}.png`;
+        const key = `${uuidv4()}.${exts[type]}`;
         await Storage.put(key, blob, {
-            contentType: "image/png",
+            contentType: contentTypes[type],
         });
         return key;
     } catch (err) {
@@ -93,8 +98,8 @@ const InputBox = ({ chatroom }) => {
         };
 
         const newAttachment = {
-            storageKey: await uploadFile({ uri: file.uri, type: "" }),
-            type: "IMAGE",
+            storageKey: await uploadFile(file),
+            type: types[file.type],
             width: file.width,
             height: file.height,
             duration: file.duration,
@@ -109,20 +114,20 @@ const InputBox = ({ chatroom }) => {
 
     const pickImage = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            mediaTypes: ImagePicker.MediaTypeOptions.All,
             quality: 1,
             allowsMultipleSelection: true,
         });
 
         if (!result.canceled) {
-            // console.log(result.assets[0].uri);
-            setFiles(
-                result.assets.map((item) => ({
-                    uri: item.uri,
-                }))
-            );
+            setFiles(result.assets);
+            // setFiles(
+            //     result.assets.map((item) => ({
+            //         uri: item.uri,
+            //         type: item.type,
+            //     }))
+            // );
         }
-
     };
 
     return (
